@@ -15,7 +15,7 @@ async function fails(fn,label) { let failed=false; try { await fn(); } catch { f
 async function q(sql,params=[]) { return (await db.query(sql,params)).rows; }
 async function one(sql,params=[]) { return (await q(sql,params))[0]; }
 async function as(uid,role='authenticated') { await db.exec(`reset role; set role ${role};`); await q("select set_config('request.jwt.claim.sub',$1,false)",[uid||'']); }
-const migration = (await Promise.all(['202611110001_initial.sql','202611110002_business_industries.sql'].map(name=>readFile(new URL('../migrations/'+name,import.meta.url),'utf8')))).join('\n');
+const migration = (await Promise.all(['202611110001_initial.sql','202611110002_business_industries.sql','202611110003_platform_admin.sql'].map(name=>readFile(new URL('../migrations/'+name,import.meta.url),'utf8')))).join('\n');
 try {
  await db.exec(`
  create role anon nologin; create role authenticated nologin;
@@ -138,5 +138,55 @@ try {
  eq((await one('select name from public.organizations where id=$1',[tenant])).name,safeSettings.name,'invalid segment rolls back other profile updates');
  await as(client);
  await fails(()=>q('select public.save_business_profile($1,$2::jsonb)',[tenant,JSON.stringify({...safeSettings,industry:'education'})]),'customer cannot change business segment');
+ await as(owner);
+ eq((await one('select public.is_platform_admin() ok')).ok,false,'business owner is not platform admin');
+ await fails(()=>q('select public.platform_overview()'),'business owner cannot read platform totals');
+ await fails(()=>q("select public.platform_list('users')"),'business owner cannot list platform accounts');
+ await fails(()=>q('insert into agendaja_private.platform_owner(singleton,user_id) values(true,$1)',[owner]),'app account cannot self grant platform ownership');
+ await fails(()=>q('select * from agendaja_private.platform_owner'),'private owner identity not exposed');
+ await db.exec('reset role');
+ await q("update auth.users set raw_user_meta_data='{"+'"is_platform_admin":true,"role":"superadmin"'+"}'::jsonb where id=$1",[client]);
+ await as(client);
+ eq((await one('select public.is_platform_admin() ok')).ok,false,'editable metadata does not grant platform access');
+ await q("update public.profiles set email='spoofed@test.local' where id=$1",[client]);
+ await as(null,'anon');
+ await fails(()=>q('select public.platform_overview()'),'anonymous cannot read platform overview');
+ await db.exec('reset role');
+ await q('insert into agendaja_private.platform_owner(singleton,user_id) values(true,$1)',[owner]);
+ await fails(()=>q('insert into agendaja_private.platform_owner(singleton,user_id) values(true,$1)',[owner2]),'only one platform owner exists');
+ await as(owner);
+ eq((await one('select public.is_platform_admin() ok')).ok,true,'verified explicitly granted account has access');
+ eq((await one('select public.platform_overview() info')).info.organizations,2,'platform owner sees all organizations');
+ const accounts=(await one("select public.platform_list('users') info")).info;
+ eq(accounts.total,5,'platform owner lists all accounts including unverified accounts');
+ eq(Object.hasOwn(accounts.rows[0],'raw_user_meta_data'),false,'account list excludes auth metadata');
+ eq(Object.hasOwn(accounts.rows[0],'encrypted_password'),false,'account list excludes credential material');
+ eq(accounts.rows.find(row=>row.id===client).email,'client@test.local','admin sees verified auth email rather than editable profile email');
+ eq((await one("select public.platform_list('services',$1) info",[tenant2])).info.total,1,'platform filter respects chosen business');
+ await q('select public.platform_update($1,$2,$3::jsonb)',['organizations',tenant2,JSON.stringify({name:'Escola atualizada'})]);
+ eq((await one("select public.platform_list('organizations',$1) info",[tenant2])).info.rows[0].name,'Escola atualizada','admin edits another business');
+ eq((await one("select public.platform_list('audit') info")).info.total,1,'admin edit creates audit record');
+ for(const entity of ['members','hours','availability','time_off','assignments','events','professionals','customers','appointments'])await q('select public.platform_list($1)',[entity]);
+ await fails(()=>q('select public.platform_update($1,$2,$3::jsonb)',['organizations',tenant2,JSON.stringify({id:tenant})]),'record identity cannot be changed');
+ await fails(()=>q('select public.platform_update($1,$2,$3::jsonb)',['professionals',pro,JSON.stringify({user_id:client})]),'admin edit cannot steal professional account link');
+ await fails(()=>q("select public.platform_list('organizations;drop table public.profiles')"),'entity SQL injection rejected');
+ await fails(()=>q("select public.platform_list('users',null,'',0,null)"),'unbounded pagination rejected');
+ await as(owner2);
+ await fails(()=>q('select public.platform_update($1,$2,$3::jsonb)',['organizations',tenant,JSON.stringify({active:false})]),'ordinary tenant admin cannot modify another business');
+ await as(owner);
+ await q('select public.platform_update($1,$2,$3::jsonb)',['organizations',tenant2,JSON.stringify({active:false})]);
+ await as(owner2);
+ eq((await one('select public.has_org_role($1) ok',[tenant2])).ok,false,'suspended business team loses API access');
+ eq((await q('update public.organizations set active=true where id=$1 returning id',[tenant2])).length,0,'suspended owner cannot reactivate themselves');
+ eq((await one("select public.get_public_business('escola-teste') info")).info,null,'suspended business public page disabled');
+ await as(owner);
+ await q('select public.platform_update($1,$2,$3::jsonb)',['organizations',tenant2,JSON.stringify({active:true})]);
+ await as(owner2);
+ eq((await one('select public.has_org_role($1) ok',[tenant2])).ok,true,'platform owner can restore business access');
+ await db.exec('reset role');
+ await q('update auth.users set email_confirmed_at=null where id=$1',[owner]);
+ await as(owner);
+ eq((await one('select public.is_platform_admin() ok')).ok,false,'unverified account cannot retain platform authority');
+ await fails(()=>q('select public.platform_overview()'),'all operations recheck verification');
  console.log(`PostgreSQL migration and ${checks} integration checks passed (PGlite; mocked Supabase auth/storage).`);
 } finally { await db.close(); }

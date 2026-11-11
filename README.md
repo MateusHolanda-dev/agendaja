@@ -4,6 +4,8 @@ Plataforma em português brasileiro para negócios com hora marcada: salões, ba
 
 **Para conectar seu projeto, siga [CONECTAR_SUPABASE.md](CONECTAR_SUPABASE.md).** A versão publicada usa exclusivamente autenticação e dados reais. Sem conexão configurada, o login informa que o acesso ainda não foi ativado; não cria contas de amostra.
 
+Para a administração exclusiva do dono da plataforma, consulte [ADMINISTRACAO.md](ADMINISTRACAO.md). Essa permissão é separada da administração de cada empresa e exige liberação explícita no banco.
+
 ## Executar
 
 Recomendado **Node.js 22 ou superior** (exigido pela versão do SDK Supabase). O build e os testes de regras também foram executados no Node 20.3.1 deste ambiente; os testes de navegador foram executados com Node 22.

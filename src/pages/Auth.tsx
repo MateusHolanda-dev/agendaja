@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase';
 const schema=z.object({name:z.string().optional(),email:z.email('Informe um e-mail válido.'),password:z.string().min(8,'Use pelo menos 8 caracteres.')});
 type Values=z.infer<typeof schema>;
 export default function Auth(){
- const {area='profissional'}=useParams();const customer=area==='cliente';const [params]=useSearchParams();const redirect=params.get('redirect')??params.get('next');const safeRedirect=redirect?.startsWith('/agendar/')&&!redirect.startsWith('//')&&!redirect.includes('\\')?redirect:null;
+ const {area='profissional'}=useParams();const customer=area==='cliente';const [params]=useSearchParams();const redirect=params.get('redirect')??params.get('next');const safeRedirect=(redirect==='/gestao'||redirect?.startsWith('/agendar/'))&&!redirect.startsWith('//')&&!redirect.includes('\\')?redirect:null;
  const {isDemo,enterDemo,user,loading}=useApp();const navigate=useNavigate();
  const [mode,setMode]=useState<'login'|'signup'|'recover'>(params.get('cadastro')==='1'?'signup':'login'),[show,setShow]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  const {register,handleSubmit,formState:{errors}}=useForm<Values>({resolver:zodResolver(schema)});

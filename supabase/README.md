@@ -4,6 +4,8 @@ O modo de demonstração do frontend usa dados locais do navegador. Este diretó
 
 ## Instalação
 
+A administração exclusiva da plataforma é acrescentada pela migration `202611110003_platform_admin.sql`. Ela não libera automaticamente nenhuma conta. O proprietário deve executar também `ATIVAR_ADMIN.sql`, preenchendo seu e-mail confirmado. Consulte `../ADMINISTRACAO.md` para acesso, operações e revogação. Em projetos existentes que já executaram as duas primeiras migrations, aplique somente a nova migration.
+
 1. Crie um projeto Supabase e aplique `migrations/202611110001_initial.sql` e depois `migrations/202611110002_business_industries.sql` no SQL Editor como proprietário do projeto, ou use `supabase db push` após vincular o projeto com a CLI. Cada arquivo é aplicado uma única vez. A segunda migration acrescenta o segmento do negócio e a função `save_business_profile`, que salva configurações e segmento na mesma transação.
 2. No Auth, habilite cadastro por e-mail, confirmação de e-mail e recuperação de senha; configure a URL do site e os redirecionamentos permitidos. Habilite proteção antiabuso/CAPTCHA do provedor para cadastros e login antes da abertura pública.
 3. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` no `.env.local` do aplicativo, usando somente a URL e a chave pública/anon. Nunca coloque a chave `service_role` no frontend. Reinicie o Vite.
