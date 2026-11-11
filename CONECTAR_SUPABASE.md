@@ -12,11 +12,11 @@ No VS Code, abra a pasta `C:\Users\mateu\Desktop\AgendaJá\agendaja`. Crie `.env
 
 ```env
 VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
-VITE_SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA
+VITE_SUPABASE_PUBLISHABLE_KEY=SUA_CHAVE_PUBLICA
 VITE_ENABLE_DEMO=false
 ```
 
-O nome da variável aceita tanto a chave Publishable quanto a antiga `anon`. O arquivo deve se chamar `.env.local`, sem `.txt`. Ele já está excluído do Git.
+Para a chave antiga `anon`, também aceitamos o nome `VITE_SUPABASE_ANON_KEY`. Variáveis `NEXT_PUBLIC_*` são para Next.js e não são utilizadas por esta aplicação Vite. O arquivo deve se chamar `.env.local`, sem `.txt`. Ele já está excluído do Git.
 
 ## 3. Criar as tabelas e regras
 

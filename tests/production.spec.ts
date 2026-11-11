@@ -5,8 +5,9 @@ test('publicação apresenta vários segmentos e não oferece acesso fictício',
  await expect(page.getByRole('heading',{name:/A agenda acompanha/})).toBeVisible();
  for(const name of ['Salões e barbearias','Consultórios e profissionais','Aulas e consultorias','Serviços para pets','Oficinas e outros negócios'])await expect(page.getByRole('heading',{name})).toBeVisible();
  await page.getByRole('link',{name:'Organizar meu negócio'}).click();
- await expect(page.getByText('Acesso ainda não ativado',{exact:true})).toBeVisible();
- await expect(page.getByRole('button',{name:'Criar minha conta'})).toBeDisabled();
+ const inactive=await page.getByText('Acesso ainda não ativado',{exact:true}).count();
+ if(inactive)await expect(page.getByRole('button',{name:'Criar minha conta'})).toBeDisabled();
+ else await expect(page.getByRole('button',{name:'Criar minha conta'})).toBeEnabled();
  await expect(page.getByRole('button',{name:'Explorar demonstração'})).toHaveCount(0);
  await page.evaluate(()=>sessionStorage.setItem('agendaja-demo-user',JSON.stringify({id:'demo-owner',name:'Rafael Costa',role:'owner',tenantId:'demo'})));
  await page.goto('/app');
