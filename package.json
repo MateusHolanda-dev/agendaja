@@ -8,7 +8,7 @@
                     "build":  "tsc -b \u0026\u0026 vite build",
                     "preview":  "vite preview --host 127.0.0.1",
                     "test":  "tsx --test src/lib/scheduling.test.ts",
-                    "test:e2e":  "playwright test"
+                    "test:e2e":  "npm run build && playwright test"
                 },
     "dependencies":  {
                          "@hookform/resolvers":  "5.2.0",

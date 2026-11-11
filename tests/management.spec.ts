@@ -8,7 +8,7 @@ test('painel, cadastros, agenda e persistência',async({page})=>{
  await expect(page.getByRole('heading',{name:/Olá, Rafael/})).toBeVisible();
  await page.screenshot({path:'test-results/dashboard-desktop.png',fullPage:true,animations:'disabled'});
  await page.getByRole('link',{name:'Serviços',exact:true}).click();
- await expect(page.getByRole('heading',{name:'Feito para cuidar',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Seus serviços',exact:true})).toBeVisible();
  await page.getByRole('button',{name:/Novo serviço/}).click();
  await page.getByLabel('Nome do serviço').fill('Cuidado de teste');
  await page.getByRole('dialog').getByLabel('Categoria').fill('Testes');

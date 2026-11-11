@@ -4,7 +4,7 @@ O modo de demonstração do frontend usa dados locais do navegador. Este diretó
 
 ## Instalação
 
-1. Crie um projeto Supabase e aplique `migrations/202611110001_initial.sql` no SQL Editor como proprietário do projeto, ou use `supabase db push` após vincular o projeto com a CLI.
+1. Crie um projeto Supabase e aplique `migrations/202611110001_initial.sql` e depois `migrations/202611110002_business_industries.sql` no SQL Editor como proprietário do projeto, ou use `supabase db push` após vincular o projeto com a CLI. Cada arquivo é aplicado uma única vez. A segunda migration acrescenta o segmento do negócio e a função `save_business_profile`, que salva configurações e segmento na mesma transação.
 2. No Auth, habilite cadastro por e-mail, confirmação de e-mail e recuperação de senha; configure a URL do site e os redirecionamentos permitidos. Habilite proteção antiabuso/CAPTCHA do provedor para cadastros e login antes da abertura pública.
 3. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` no `.env.local` do aplicativo, usando somente a URL e a chave pública/anon. Nunca coloque a chave `service_role` no frontend. Reinicie o Vite.
 4. Cadastre uma conta, confirme o e-mail e crie a organização com a RPC de onboarding. A organização nasce vazia, com funcionamento de segunda a sábado, das 09h às 18h, no fuso `America/Fortaleza`.
@@ -47,7 +47,7 @@ Use `supabase.rpc('nome', { parametros })`. Erros de regras de negócio são ret
 
 ### `onboard_organization`
 
-Parâmetros: `{p_name: string, p_slug: string}`. Requer login. Retorna o UUID da organização. Cria organização, vínculo de proprietário e horários padrão em uma transação. Dados de perfil são criados pelo trigger de Auth; contas preexistentes recebem backfill na migration.
+Parâmetros: `{p_name: string, p_slug: string, p_industry?: string}`. Requer login. Retorna o UUID da organização. Cria organização, segmento, vínculo de proprietário e horários padrão em uma transação. Segmentos aceitos: salon, barbershop, aesthetics, consultations, fitness, education, pet, automotive, consulting, other. Não insere serviços nem clientes de exemplo. Dados de perfil são criados pelo trigger de Auth; contas preexistentes recebem backfill na migration.
 
 ### `get_public_business`
 

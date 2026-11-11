@@ -15,7 +15,7 @@ async function fails(fn,label) { let failed=false; try { await fn(); } catch { f
 async function q(sql,params=[]) { return (await db.query(sql,params)).rows; }
 async function one(sql,params=[]) { return (await q(sql,params))[0]; }
 async function as(uid,role='authenticated') { await db.exec(`reset role; set role ${role};`); await q("select set_config('request.jwt.claim.sub',$1,false)",[uid||'']); }
-const migration = await readFile(new URL('../migrations/202611110001_initial.sql', import.meta.url),'utf8');
+const migration = (await Promise.all(['202611110001_initial.sql','202611110002_business_industries.sql'].map(name=>readFile(new URL('../migrations/'+name,import.meta.url),'utf8')))).join('\n');
 try {
  await db.exec(`
  create role anon nologin; create role authenticated nologin;
@@ -33,7 +33,8 @@ try {
  eq((await one('select count(*)::int n from public.profiles')).n,4,'auth profile trigger');
  await as(owner); const tenant=(await one("select public.onboard_organization('Studio Teste','studio-teste') id")).id;
  await fails(()=>q("select public.onboard_organization('Duplicado','studio-duplicado')"),'one tenant per owner');
- await as(owner2); const tenant2=(await one("select public.onboard_organization('Outro Studio','outro-studio') id")).id;
+ await as(owner2); const tenant2=(await one("select public.onboard_organization('Escola Teste','escola-teste','education') id")).id;
+ eq((await one('select industry from public.organizations where id=$1',[tenant2])).industry,'education','onboarding stores selected industry');
  const foreignService=(await one("insert into public.services(tenant_id,name,price,duration) values($1,'Outro Corte',60,30) returning id",[tenant2])).id;
  await as(owner); eq((await q('select * from public.organizations')).length,1,'tenant RLS isolation');
  const service=(await one("insert into public.services(tenant_id,name,price,duration) values($1,'Corte',50,60) returning id",[tenant])).id;
@@ -130,5 +131,12 @@ try {
  await fails(()=>q("select public.set_team_member($1,'client@test.local','receptionist',null)",[tenant]),'admin cannot grant team access');
  eq((await q('update public.professionals set user_id=$1 where id=$2 returning id',[owner2,pro])).length,0,'direct professional link cannot bypass team RPC');
  await fails(()=>q("insert into public.organization_members(tenant_id,user_id,role) values($1,$2,'receptionist')",[tenant,client]),'direct membership insertion denied');
+ await as(owner);
+ await q('select public.save_business_profile($1,$2::jsonb)',[tenant,JSON.stringify({...safeSettings,industry:'salon'})]);
+ eq((await one('select industry from public.organizations where id=$1',[tenant])).industry,'salon','business segment is editable');
+ await fails(()=>q('select public.save_business_profile($1,$2::jsonb)',[tenant,JSON.stringify({...safeSettings,name:'Should rollback',industry:'invalid'})]),'invalid segment rejected');
+ eq((await one('select name from public.organizations where id=$1',[tenant])).name,safeSettings.name,'invalid segment rolls back other profile updates');
+ await as(client);
+ await fails(()=>q('select public.save_business_profile($1,$2::jsonb)',[tenant,JSON.stringify({...safeSettings,industry:'education'})]),'customer cannot change business segment');
  console.log(`PostgreSQL migration and ${checks} integration checks passed (PGlite; mocked Supabase auth/storage).`);
 } finally { await db.close(); }

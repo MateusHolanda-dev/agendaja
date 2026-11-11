@@ -7,8 +7,12 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: 'list',
+  webServer: [
+    {command:'npm run dev -- --port 5175 --strictPort',url:'http://127.0.0.1:5175',env:{VITE_ENABLE_DEMO:'true',VITE_SUPABASE_URL:'',VITE_SUPABASE_ANON_KEY:''},reuseExistingServer:false},
+    {command:'npm run preview -- --port 4175 --strictPort',url:'http://127.0.0.1:4175',reuseExistingServer:false},
+  ],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://127.0.0.1:5175',
     channel: 'msedge',
     headless: true,
     viewport: { width: 1440, height: 1000 },

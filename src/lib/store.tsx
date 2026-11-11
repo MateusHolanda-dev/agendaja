@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from './supabase';
+import { supabase, demoEnabled } from './supabase';
 import { seedData } from './seed';
 import { validateAppointment, businessNow, minutes, overlaps } from './scheduling';
 import { loadRemote, persistRemote, bookRemote, updateRemoteAppointment } from './repository';
 import type { AppData, Appointment, BusinessSettings, Customer, Professional, Service, SessionUser, TimeOff } from './types';
 const KEY='agendaja-demo-v1';
 const blank=():AppData=>({services:[],professionals:[],customers:[],appointments:[],timeOff:[],events:[],settings:{name:'Meu estabelecimento',slug:'',phone:'',email:'',address:'',timezone:'America/Fortaleza',opening:'09:00',closing:'18:00',weekdays:[1,2,3,4,5],cancellationHours:2,interval:15}});
-const readDemo=()=>{try {const d=localStorage.getItem(KEY);return d?JSON.parse(d) as AppData:seedData();}catch{return seedData();}};
-const readDemoUser=():SessionUser|null=>{if(supabase)return null;try{const s=sessionStorage.getItem('agendaja-demo-user');return s?JSON.parse(s) as SessionUser:null;}catch{return null;}};
+const readDemo=()=>{if(!demoEnabled)return blank();try {const d=localStorage.getItem(KEY);return d?JSON.parse(d) as AppData:seedData();}catch{return seedData();}};
+const readDemoUser=():SessionUser|null=>{if(!demoEnabled)return null;try{const s=sessionStorage.getItem('agendaja-demo-user');return s?JSON.parse(s) as SessionUser:null;}catch{return null;}};
 type AppointmentInput=Omit<Appointment,'id'|'createdAt'|'status'|'paid'>;
 interface Context {data:AppData;user:SessionUser|null;isDemo:boolean;loading:boolean;error:string|null;toast:string|null;notify:(m:string)=>void;clearToast:()=>void;enterDemo:(role:'owner'|'customer')=>void;logout:()=>Promise<void>;saveService:(s:Service)=>Promise<void>;saveProfessional:(p:Professional)=>Promise<void>;saveCustomer:(c:Customer)=>Promise<void>;saveSettings:(s:BusinessSettings)=>Promise<void>;addTimeOff:(t:TimeOff)=>Promise<void>;removeTimeOff:(id:string)=>Promise<void>;bookAppointment:(a:AppointmentInput)=>Promise<Appointment>;updateAppointment:(id:string,patch:Partial<Appointment>)=>Promise<void>;reload:()=>void;resetDemo:()=>void}
 const AppContext=createContext<Context|null>(null);
@@ -16,13 +16,13 @@ export function AppProvider({children}:{children:ReactNode}){
  const [user,setUser]=useState<SessionUser|null>(readDemoUser),[ready,setReady]=useState(!supabase),[demoData,setDemoData]=useState<AppData>(readDemo),[toast,setToast]=useState<string|null>(null);
  const demoRef=useRef(demoData);
  const commitDemo=(transform:(prev:AppData)=>AppData)=>{const next=transform(demoRef.current);try{localStorage.setItem(KEY,JSON.stringify(next));}catch{throw new Error('Não foi possível salvar neste navegador. Confira o espaço de armazenamento.');}demoRef.current=next;setDemoData(next);};
- const isDemo=!supabase;const qc=useQueryClient();
+ const isDemo=demoEnabled;const qc=useQueryClient();
  const remote=useQuery({queryKey:['workspace',user?.id,user?.tenantId],queryFn:()=>loadRemote(user!),enabled:!isDemo&&!!user,retry:1});
  const data=isDemo?demoData:remote.data??blank();
  const notify=useCallback((m:string)=>setToast(m),[]);
  useEffect(()=>{if(toast){const t=setTimeout(()=>setToast(null),5000);return()=>clearTimeout(t);}},[toast]);
  useEffect(()=>{if(isDemo){try{localStorage.setItem(KEY,JSON.stringify(demoData));}catch{notify('Não foi possível salvar neste navegador. Confira o espaço de armazenamento.');}}},[demoData,isDemo,notify]);
- useEffect(()=>{if(!supabase){try{const s=sessionStorage.getItem('agendaja-demo-user');if(s)setUser(JSON.parse(s));}catch{/* No session available */}return;}let active=true;
+ useEffect(()=>{if(!supabase){setUser(readDemoUser());return;}let active=true;
  const resolve=async(id:string,email:string)=>{const [{data:p},{data:members}]=await Promise.all([supabase!.from('profiles').select('*').eq('id',id).maybeSingle(),supabase!.from('organization_members').select('tenant_id,role').eq('user_id',id).limit(1)]);if(!active)return;const m=members?.[0];const {data:pro}=m?await supabase!.from('professionals').select('id').eq('tenant_id',m.tenant_id).eq('user_id',id).maybeSingle():{data:null};setUser({id,email,name:p?.name??email.split('@')[0],role:m?.role??'customer',tenantId:m?.tenant_id,professionalId:pro?.id});setReady(true);};
  supabase.auth.getSession().then(({data:{session}})=>{if(session)void resolve(session.user.id,session.user.email??'');else if(active)setReady(true);});
  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{if(session)setTimeout(()=>void resolve(session.user.id,session.user.email??''),0);else{setUser(null);setReady(true);qc.clear();}});return()=>{active=false;subscription.unsubscribe();};
