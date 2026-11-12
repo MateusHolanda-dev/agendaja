@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 .env.local
+*.local.sql
 *.tsbuildinfo
 test-results/
 playwright-report/
