@@ -8,12 +8,15 @@ import { supabase } from '../lib/supabase';
 import { normalizeSlug, suggestSlug, slugError, businessError, SLUG_HTML_PATTERN } from '../lib/slug';
 import SessionRecovery from '../components/SessionRecovery';
 import { loginFor } from '../lib/navigation';
+import { usePlatformAccess } from '../lib/platform';
 export default function Onboarding(){
  const {user,isDemo,authLoading,authError}=useApp();
+ const platformAccess=usePlatformAccess();
  const [name,setName]=useState(''),[industry,setIndustry]=useState(''),[slug,setSlug]=useState(''),[slugEdited,setSlugEdited]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false);
- if(authLoading)return <div className="page-loader">Carregando…</div>;
+ if(authLoading||platformAccess.checking)return <div className="page-loader">Carregando…</div>;
  if(authError)return <SessionRecovery/>;
  if(!user)return <Navigate to={loginFor('profissional','/onboarding')} replace/>;
+ if(platformAccess.data===true)return <Navigate to="/gestao" replace/>;
  if(user.tenantId||isDemo)return <Navigate to="/app" replace/>;
  async function submit(e:React.FormEvent){
   e.preventDefault();if(busy)return;setError('');const cleanSlug=normalizeSlug(slug);setSlug(cleanSlug);
