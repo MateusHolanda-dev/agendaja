@@ -6,11 +6,14 @@ import { useApp } from '../lib/store';
 import { industries } from '../lib/industries';
 import { supabase } from '../lib/supabase';
 import { normalizeSlug, suggestSlug, slugError, businessError, SLUG_HTML_PATTERN } from '../lib/slug';
+import SessionRecovery from '../components/SessionRecovery';
+import { loginFor } from '../lib/navigation';
 export default function Onboarding(){
- const {user,isDemo,loading}=useApp();
+ const {user,isDemo,authLoading,authError}=useApp();
  const [name,setName]=useState(''),[industry,setIndustry]=useState(''),[slug,setSlug]=useState(''),[slugEdited,setSlugEdited]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false);
- if(loading)return <div className="page-loader">Carregando…</div>;
- if(!user)return <Navigate to="/login/profissional" replace/>;
+ if(authLoading)return <div className="page-loader">Carregando…</div>;
+ if(authError)return <SessionRecovery/>;
+ if(!user)return <Navigate to={loginFor('profissional','/onboarding')} replace/>;
  if(user.tenantId||isDemo)return <Navigate to="/app" replace/>;
  async function submit(e:React.FormEvent){
   e.preventDefault();if(busy)return;setError('');const cleanSlug=normalizeSlug(slug);setSlug(cleanSlug);
@@ -19,7 +22,7 @@ export default function Onboarding(){
   const invalidSlug=slugError(cleanSlug);if(invalidSlug){setError(invalidSlug);return;}
   if(!supabase){setError('O acesso ainda não foi ativado.');return;}
   setBusy(true);
-  try{const {error}=await supabase.rpc('onboard_organization',{p_name:name.trim(),p_slug:cleanSlug,p_industry:industry});if(error)throw error;location.href='/app';}
+  try{const {error}=await supabase.rpc('onboard_organization',{p_name:name.trim(),p_slug:cleanSlug,p_industry:industry});if(error)throw error;location.replace('/app');}
   catch(failure){setError(businessError(failure));}finally{setBusy(false);}
  }
  return <div className="standalone"><Logo/><div className="card onboarding"><span className="eyebrow">O COMEÇO DE UMA NOVA ROTINA</span><h1>Vamos conhecer seu negócio?</h1><p className="muted">Dê um nome ao seu espaço e escolha o link dos seus agendamentos.</p><form onSubmit={submit} noValidate>

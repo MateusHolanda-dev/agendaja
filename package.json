@@ -7,7 +7,7 @@
                     "dev":  "vite --host 127.0.0.1",
                     "build":  "tsc -b \u0026\u0026 vite build",
                     "preview":  "vite preview --host 127.0.0.1",
-                    "test":  "tsx --test src/lib/scheduling.test.ts src/lib/slug.test.ts",
+                    "test":  "tsx --test src/lib/scheduling.test.ts src/lib/slug.test.ts src/lib/navigation.test.ts",
                     "test:e2e":  "npm run build && playwright test"
                 },
     "dependencies":  {

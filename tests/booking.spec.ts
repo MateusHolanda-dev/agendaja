@@ -43,7 +43,7 @@ test('cliente reserva, reagenda e cancela o próprio atendimento, com persistên
     return data.appointments.at(-1) as {id:string;date:string;status:string};
   });
   expect(saved.date).toBe(date);
-  await page.getByRole('link',{name:'Meus agendamentos'}).click();
+  await page.getByRole('main').getByRole('link',{name:'Meus agendamentos'}).click();
   await expect(page).toHaveURL(/\/cliente$/);
   await page.reload();
   const article=page.locator('.customer-appointment').filter({hasText:'Atendimento individual'}).last();
@@ -55,7 +55,7 @@ test('cliente reserva, reagenda e cancela o próprio atendimento, com persistên
   await fillDetails(page);
   await page.getByRole('button',{name:'Confirmar novo horário',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Seu novo horário está reservado.'})).toBeVisible();
-  await page.getByRole('link',{name:'Meus agendamentos'}).click();
+  await page.getByRole('main').getByRole('link',{name:'Meus agendamentos'}).click();
   const movedArticle=page.locator('.customer-appointment').filter({hasText:'Atendimento individual'}).last();
   await movedArticle.getByRole('button',{name:'Ver detalhes de Atendimento individual'}).click();
   await movedArticle.getByRole('button',{name:'Cancelar agendamento',exact:true}).click();
