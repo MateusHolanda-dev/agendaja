@@ -32,10 +32,6 @@ export async function persistRemote(user:SessionUser,kind:string,value:unknown,r
  if(kind==='timeOff'){table='time_off';const t=value as TimeOff;if(remove){const {error}=await supabase.from(table).delete().eq('id',t.id).eq('tenant_id',tenant_id);check(error);return;}const {data:o,error}=await supabase.from('organizations').select('timezone').eq('id',tenant_id).single();check(error);row={id:t.id,tenant_id,professional_id:t.professionalId,starts_at:zonedISO(t.date,t.start,o!.timezone),ends_at:zonedISO(t.date,t.end,o!.timezone),reason:t.reason};}
  const {error}=await supabase.from(table).upsert(row);check(error);
 }
-export async function bookRemote(user:SessionUser,data:AppData,input:Omit<Appointment,'id'|'createdAt'|'status'|'paid'>):Promise<Appointment>{
- if(!supabase||!user.tenantId)throw new Error('Entre como equipe para criar um atendimento.');
- const starts_at=zonedISO(input.date,input.time,data.settings.timezone);const {data:a,error}=await supabase.from('appointments').insert({tenant_id:user.tenantId,customer_id:input.customerId,professional_id:input.professionalId,service_id:input.serviceId,starts_at,ends_at:starts_at,duration:input.duration,price:input.price,notes:input.notes,status:'confirmed'}).select().single();check(error);return mapAppointment(a,data.settings.timezone);
-}
 export async function updateRemoteAppointment(id:string,patch:Partial<Appointment>,data:AppData,user:SessionUser){
  if(!supabase)return;const a=data.appointments.find(a=>a.id===id)!;const tz=a.timezone??data.settings.timezone;
  if(user.role==='customer'){const {error}=patch.status==='cancelled'?await supabase.rpc('cancel_my_appointment',{p_appointment_id:id}):await supabase.rpc('reschedule_my_appointment',{p_appointment_id:id,p_starts_at:zonedISO(patch.date??a.date,patch.time??a.time,tz)});check(error);return;}

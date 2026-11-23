@@ -22,7 +22,7 @@ test('painel, cadastros, agenda e persistência',async({page})=>{
  await page.screenshot({path:'test-results/agenda-desktop.png',fullPage:true});
  await page.getByRole('button',{name:'Semana',exact:true}).click();await expect(page.locator('.calendar-period.week')).toBeVisible();
  await page.getByRole('button',{name:'Mês',exact:true}).click();await expect(page.locator('.calendar-period.month')).toBeVisible();
- await page.getByRole('button',{name:'Novo agendamento',exact:true}).click();await expect(page.getByRole('dialog')).toBeVisible();await page.getByRole('button',{name:'Fechar',exact:true}).last().click();
+ await expect(page.getByRole('button',{name:'Novo agendamento',exact:true})).toHaveCount(0);
  await page.getByRole('link',{name:'Clientes',exact:true}).click();await expect(page.getByRole('heading',{name:'Seus clientes',exact:true})).toBeVisible();
  await page.getByRole('link',{name:'Profissionais',exact:true}).click();await expect(page.getByRole('heading',{name:'Sua equipe',exact:true})).toBeVisible();
  await page.getByRole('link',{name:'Configurações',exact:true}).click();await expect(page.getByRole('heading',{name:'Tudo no lugar',exact:true})).toBeVisible();
@@ -38,19 +38,12 @@ test('navegação e layout no celular',async({page})=>{
  await page.getByRole('button',{name:'Abrir navegação'}).click();await page.getByRole('link',{name:'Agenda',exact:true}).click();await expect(page.getByRole('heading',{name:/Sua agenda/})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
-test('equipe cria atendimento e registra recebimento',async({page})=>{
+test('equipe acompanha reserva existente e registra recebimento',async({page})=>{
  await page.goto('/login/profissional');await page.getByRole('button',{name:'Explorar demonstração'}).click();
- const date=await page.evaluate(()=>{const date=new Date();date.setDate(date.getDate()+14);return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);});
- await page.goto('/app/agenda?data='+date+'&novo=1');
+ const existing=await page.evaluate(()=>JSON.parse(localStorage.getItem('agendaja-demo-v1')!).appointments.find((a:{status:string})=>a.status==='confirmed'));
+ await page.goto('/app/agenda?data='+existing.date+'&atendimento='+existing.id);
  const modal=page.getByRole('dialog');await expect(modal).toBeVisible();
- await modal.getByRole('combobox',{name:'Cliente',exact:true}).selectOption('c1');
- await modal.getByRole('combobox',{name:'Profissional',exact:true}).selectOption('p1');
- await modal.getByRole('combobox',{name:'Serviço',exact:true}).selectOption('s1');
- await modal.getByRole('combobox',{name:'Horário',exact:true}).selectOption('11:00');
- await modal.getByRole('button',{name:'Confirmar agendamento'}).click();
- await expect(modal).not.toBeVisible();await expect(page.locator('.appointment-block').filter({hasText:'Pedro Henrique'})).toBeVisible();
- await page.locator('.appointment-block').filter({hasText:'Pedro Henrique'}).click();
- await modal.getByRole('button',{name:'Marcar recebido'}).click();await expect(modal.getByRole('button',{name:'Desmarcar recebimento'})).toBeVisible();
+ await modal.getByRole('button',{name:'Marcar recebido',exact:true}).click();await expect(modal.getByRole('button',{name:'Desmarcar recebimento'})).toBeVisible();
  await modal.getByRole('button',{name:'Fechar',exact:true}).last().click();
- await page.reload();await page.locator('.appointment-block').filter({hasText:'Pedro Henrique'}).click();await expect(page.getByRole('dialog').getByRole('button',{name:'Desmarcar recebimento'})).toBeVisible();
+ await page.reload();await page.goto('/app/agenda?data='+existing.date+'&atendimento='+existing.id);await expect(page.getByRole('dialog').getByRole('button',{name:'Desmarcar recebimento'})).toBeVisible();
 });

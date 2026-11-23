@@ -205,12 +205,12 @@ export function ProfessionalsPage() {
   </>;
 }
 
-export function SettingsPage() {
+export function SettingsPage({initialTab='business'}:{initialTab?:string}) {
   const { data, user, saveSettings, notify, isDemo } = useApp();
   const [settings, setSettings] = useState<BusinessSettings>({ ...data.settings, weekdays: [...data.settings.weekdays] });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState('business');
+  const [tab, setTab] = useState(initialTab);
   const canEdit = isManager(user?.role);
   const publicUrl = `${window.location.origin}/agendar/${settings.slug}`;
   const update = <K extends keyof BusinessSettings>(key: K, value: BusinessSettings[K]) => setSettings(current => ({ ...current, [key]: value }));
