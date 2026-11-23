@@ -43,9 +43,9 @@ test('login aguarda os dados da conta e retorna à página solicitada',async({pa
 test('sessão acompanha a navegação, recarga e volta de outra aba',async({page,context})=>{
  const state=await backend(page,{signedIn:true});const locations:string[]=[];page.on('framenavigated',f=>{if(f===page.mainFrame())locations.push(f.url());});
  await page.goto('/app/clientes?origem=teste');await expect(page.getByRole('heading',{name:'Seus clientes',exact:true})).toBeVisible();
- await page.getByRole('link',{name:'Serviços',exact:true}).click();await expect(page.getByRole('heading',{name:'Seus serviços',exact:true})).toBeVisible();
- await page.getByRole('link',{name:'Profissionais',exact:true}).click();await expect(page.getByRole('heading',{name:'Sua equipe',exact:true})).toBeVisible();
- await page.goBack();await expect(page.getByRole('heading',{name:'Seus serviços',exact:true})).toBeVisible();
+ await page.getByRole('link',{name:'Catálogo e horários',exact:true}).first().click();await expect(page.getByRole('heading',{name:'Seus serviços',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:/Equipe e serviços/}).click();await expect(page.getByRole('heading',{name:'Sua equipe',exact:true})).toBeVisible();
+ await page.getByRole('link',{name:'Clientes',exact:true}).click();await expect(page.getByRole('heading',{name:'Seus clientes',exact:true})).toBeVisible();await page.goBack();await expect(page.getByRole('heading',{name:'Seus serviços',exact:true})).toBeVisible();
  await page.reload();await expect(page.getByRole('heading',{name:'Seus serviços',exact:true})).toBeVisible();
  const other=await context.newPage();await other.goto('about:blank');await page.bringToFront();await other.close();
  await page.getByRole('link',{name:'Clientes',exact:true}).click();await expect(page.getByRole('heading',{name:'Seus clientes',exact:true})).toBeVisible();

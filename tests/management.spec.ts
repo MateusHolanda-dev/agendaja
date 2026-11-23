@@ -7,7 +7,7 @@ test('painel, cadastros, agenda e persistência',async({page})=>{
  await page.getByRole('button',{name:'Explorar demonstração'}).click();
  await expect(page.getByRole('heading',{name:/Olá, Rafael/})).toBeVisible();
  await page.screenshot({path:'test-results/dashboard-desktop.png',fullPage:true,animations:'disabled'});
- await page.getByRole('link',{name:'Serviços',exact:true}).click();
+ await page.getByRole('link',{name:'Catálogo e horários',exact:true}).first().click();
  await expect(page.getByRole('heading',{name:'Seus serviços',exact:true})).toBeVisible();
  await page.getByRole('button',{name:/Novo serviço/}).click();
  await page.getByLabel('Nome do serviço').fill('Cuidado de teste');
@@ -24,7 +24,7 @@ test('painel, cadastros, agenda e persistência',async({page})=>{
  await page.getByRole('button',{name:'Mês',exact:true}).click();await expect(page.locator('.calendar-period.month')).toBeVisible();
  await expect(page.getByRole('button',{name:'Novo agendamento',exact:true})).toHaveCount(0);
  await page.getByRole('link',{name:'Clientes',exact:true}).click();await expect(page.getByRole('heading',{name:'Seus clientes',exact:true})).toBeVisible();
- await page.getByRole('link',{name:'Profissionais',exact:true}).click();await expect(page.getByRole('heading',{name:'Sua equipe',exact:true})).toBeVisible();
+ await page.getByRole('link',{name:'Catálogo e horários',exact:true}).first().click();await page.getByRole('button',{name:/Equipe e serviços/}).click();await expect(page.getByRole('heading',{name:'Sua equipe',exact:true})).toBeVisible();
  await page.getByRole('link',{name:'Configurações',exact:true}).click();await expect(page.getByRole('heading',{name:'Tudo no lugar',exact:true})).toBeVisible();
  await page.getByRole('link',{name:'Relatórios',exact:true}).click();await expect(page.getByRole('heading',{name:'Relatórios',exact:true})).toBeVisible();
  expect(errors).toEqual([]);
