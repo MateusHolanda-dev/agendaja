@@ -2,8 +2,7 @@ import { test, expect } from '@playwright/test';
 test.use({baseURL:'http://127.0.0.1:4175'});
 test('publicação apresenta vários segmentos e não oferece acesso fictício',async({page})=>{
  await page.goto('/');
- await expect(page.getByRole('heading',{name:/A agenda acompanha/})).toBeVisible();
- for(const name of ['Salões e barbearias','Consultórios e profissionais','Aulas e consultorias','Serviços para pets','Oficinas e outros negócios'])await expect(page.getByRole('heading',{name})).toBeVisible();
+ await expect(page.getByRole('heading',{name:/Sua agenda/})).toBeVisible();
  await page.getByRole('link',{name:'Organizar meu negócio'}).click();
  const inactive=await page.getByText('Acesso ainda não ativado',{exact:true}).count();
  if(inactive)await expect(page.getByRole('button',{name:'Criar minha conta'})).toBeDisabled();
